@@ -43,9 +43,7 @@ class LinuxAutomation:
             subprocess.Popen(["xdg-open", app_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             logging.info(f"Opened application: {app_name}")
             return f"Application opened: {app_name}"
-
-
-            except Exception as e:
+        except Exception as e:
             logging.error(f"Error opening application {app_name}: {e}")
             return str(e)
 

@@ -67,10 +67,7 @@ class TrainModel:
             try:
                 from datasets import load_dataset
                 logging.info(f"Loading dataset: {self.dataset_name} ({split})")
-                return load_dataset(self)
-
-
-                dataset_name = load_dataset(self.dataset_name, split=split)
+                dataset = load_dataset(self.dataset_name, split=split)
                 return dataset
             except Exception as e:
                 logging.error(f"Error loading dataset: {e}")
