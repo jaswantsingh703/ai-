@@ -1,0 +1,11 @@
+# API Keys
+OPENAI_API_KEY=your_openai_api_key_here
+HUGGINGFACE_API_KEY=your_huggingface_api_key_here
+GOOGLE_SEARCH_API_KEY=your_google_search_api_key_here
+GOOGLE_SEARCH_ENGINE_ID=your_google_search_engine_id_here
+
+# Other Settings
+DEBUG_MODE=true
+LOGGING_LEVEL=INFO
+DEFAULT_MODEL_TYPE=gpt4all
+ENABLE_SYSTEM_CONTROL=false

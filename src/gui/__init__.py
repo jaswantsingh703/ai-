@@ -1,4 +1,3 @@
-# Python script
 """
 GUI Module
 This package handles:

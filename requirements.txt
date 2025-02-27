@@ -1,63 +1,50 @@
-#### Machine Learning & NLP Models
-torch
-transformers
-llama-cpp-python
-gpt4all
+# Core AI Models & NLP
+torch>=1.13.0
+transformers>=4.25.1
+llama-cpp-python>=0.1.78
+gpt4all>=1.0.5
+openai-whisper>=20230314
 
-#### Whisper (Speech-to-Text)
-openai-whisper
-pydub
-ffmpeg-python
+# Audio Processing
+pydub>=0.25.1
+ffmpeg-python>=0.2.0
+SpeechRecognition>=3.10.0
+pyaudio>=0.2.13
+pyttsx3>=2.90
+sounddevice>=0.4.6
+numpy>=1.24.0
+wave>=0.0.2
 
-#### GUI (Cross-Platform)
-# PyQt5
-# PySide2
+# GUI (Cross-Platform)
+PyQt5>=5.15.9
 
-#### Web Scraping (AI Self-Training)
-beautifulsoup4
-requests
-selenium
-playwright
+# Web Scraping
+beautifulsoup4>=4.12.2
+requests>=2.28.2
+googlesearch-python>=1.2.3
 
-#### AI Memory & Real-Time Learning
-chromadb
-pinecone-client
+# AI Memory & Real-Time Learning
+chromadb>=0.4.13
 
-#### OS Automation & Control
-pyautogui
-keyboard
-mouseinfo
-pyobjc-framework-Quartz  # Mac-specific (for deeper OS control)
-pygetwindow  # Window management (optional)
+# OS Automation & Control
+pyautogui>=0.9.54
+keyboard>=0.13.5
 
-#### Voice Recognition & Processing
-SpeechRecognition
-pyaudio
-sounddevice
-wave
+# Computer Vision
+opencv-python>=4.8.0
+pytesseract>=0.3.10
 
-#### Hacking Lab Setup & Ethical AI Tasks
-# nmap
-scapy
-paramiko
-shodan
+# Task Automation
+tqdm>=4.66.1
 
-#### Task Automation & AI Workflow
-babyagi
-autogpt
-tqdm
+# Database & User Data Storage
+pymongo>=4.4.1
 
-#### Database & User Data Storage
-pymongo
-sqlalchemy
+# Logging & Utilities
+loguru>=0.7.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
 
-#### Logging & Debugging
-loguru
-
-#### Miscellaneous
-numpy
-pandas
-matplotlib
-opencv-python-headless
-tiktoken
-numba
+# Development Tools
+pytest>=7.3.1
+black>=23.3.0

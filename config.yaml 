@@ -1,0 +1,39 @@
+# General Settings
+project_name: "AI Assistant"
+version: "1.0.0"
+debug_mode: true
+
+# Paths
+data_dir: "data"
+logs_dir: "logs"
+models_dir: "models"
+
+# Model Configuration
+default_model_type: "gpt4all"
+default_model_path: "models/gpt4all-j-v1.3-groovy.bin"
+fallback_model_type: "gpt4all"
+
+# API Keys
+# Note: These should be overridden in .env file
+openai_api_key: ""
+huggingface_api_key: ""
+google_search_api_key: ""
+google_search_engine_id: ""
+
+# Logging Settings
+logging_level: "INFO"
+
+# Security Settings
+enable_system_control: false
+allowed_commands:
+  - "ls"
+  - "dir"
+  - "echo"
+  - "pwd"
+  - "whoami"
+  - "date"
+  - "time"
+
+# GUI Settings
+gui_theme: "light"
+gui_font_size: 12

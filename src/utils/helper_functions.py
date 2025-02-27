@@ -48,11 +48,3 @@ def ensure_directory_exists(directory):
     """
     os.makedirs(directory, exist_ok=True)
     logging.info(f"Ensured directory exists: {directory}")
-
-# Example Usage
-if __name__ == "__main__":
-    setup_logging()
-    print(get_current_timestamp())
-    ensure_directory_exists("data")
-    write_json("data/sample.json", {"message": "Hello, World!"})
-    print(read_json("data/sample.json"))

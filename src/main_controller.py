@@ -1,116 +1,214 @@
-# Python script
 import logging
 import argparse
+import sys
+from PyQt5.QtWidgets import QApplication
 from src.ai_core.model_integration import AIModel
 from src.ai_core.voice_processing import VoiceAssistant
 from src.gui.main_window import AI_GUI
+from src.gui.voice_gui import VoiceGUI
 from src.platform_integration.system_control import SystemAutomation
 from src.database.user_data import UserData
 from src.security.ai_security import AISecurity
-
-# लॉगिंग सेटअप
-logging.basicConfig(
-    filename="logs/app.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+from src.utils.config import Config
+from src.utils.error_handler import ErrorHandler
 
 class AIAssistantController:
-    """मुख्य AI असिस्टेंट कंट्रोलर, जो सभी मॉड्यूल्स को मैनेज करता है"""
+    """
+    Main AI Assistant Controller that manages all modules.
+    """
 
     def __init__(self, mode="cli"):
-        self.mode = mode
-        self.ai_model = AIModel()
-        self.voice_assistant = VoiceAssistant()
-        self.system_automation = SystemAutomation()
-        self.gui = None  # GUI लोड करने के लिए
+        """
+        Initialize the AI Assistant Controller.
         
-        if self.mode == "gui":
-            self.gui = AI_GUI()
+        Args:
+            mode (str): Operating mode - "cli", "voice", "gui", or "automation"
+        """
+        self.mode = mode
+        
+        # Initialize core components
+        try:
+            self.ai_model = AIModel(model_type=Config.get("default_model_type"))
+            self.voice_assistant = VoiceAssistant()
+            self.system_automation = SystemAutomation()
+            self.user_data = UserData()
+            self.ai_security = AISecurity()
+            
+            # Initialize GUI if needed
+            self.gui = None
+            if self.mode == "gui":
+                self.gui = AI_GUI()
+                
+            logging.info(f"AI Assistant Controller initialized in {mode} mode")
+        except Exception as e:
+            logging.error(f"Error initializing AI Assistant Controller: {e}")
+            print(f"Error initializing AI Assistant: {e}")
 
     def run_cli(self):
-        """CLI मोड में AI असिस्टेंट चलाएं"""
+        """
+        Run AI Assistant in command line interface mode.
+        """
         print("🔹 AI Assistant CLI Mode Activated! Type 'exit' to quit.")
+        print("🤖 AI: Hello! How can I help you today?")
+        
         while True:
-            user_input = input("🗨️ You: ")
-            if user_input.lower() in ["exit", "quit"]:
-                print("👋 Exiting AI Assistant...")
+            try:
+                # Get user input
+                user_input = input("🗨️ You: ")
+                
+                # Check for exit command
+                if user_input.lower() in ["exit", "quit", "bye"]:
+                    print("👋 Exiting AI Assistant...")
+                    break
+                
+                # Process input through security filter
+                is_valid, filtered_input = self.ai_security.validate_input(user_input)
+                if not is_valid:
+                    print(f"⚠️ AI: {filtered_input}")
+                    continue
+                
+                # Generate response
+                response = self.ai_model.generate_response(filtered_input)
+                
+                # Filter response through security
+                safe_response = self.ai_security.filter_response(response)
+                
+                # Store interaction
+                self.user_data.store_user_query("cli_user", user_input, safe_response)
+                
+                # Display response
+                print(f"🤖 AI: {safe_response}")
+                
+            except KeyboardInterrupt:
+                print("\n👋 Exiting AI Assistant...")
                 break
-            response = self.ai_model.generate_response(user_input)
-            print(f"🤖 AI: {response}")
+            except Exception as e:
+                logging.error(f"Error in CLI mode: {e}")
+                print(f"❌ Error: {str(e)}")
 
     def run_voice(self):
-        """वॉयस असिस्टेंट मोड"""
+        """
+        Run AI Assistant in voice interface mode.
+        """
         print("🎤 Voice Assistant Mode Activated. Speak 'exit' to stop.")
+        print("🤖 AI: Hello! I'm listening for voice commands.")
+        
         while True:
-            text = self.voice_assistant.listen()
-            if text.lower() in ["exit", "quit"]:
-                print("👋 Stopping Voice Assistant...")
+            try:
+                # Listen for speech
+                print("🎤 Listening...")
+                text = self.voice_assistant.listen()
+                
+                if not text:
+                    print("❓ Sorry, I didn't catch that.")
+                    continue
+                    
+                print(f"🗣️ You: {text}")
+                
+                # Check for exit command
+                if text.lower() in ["exit", "quit", "bye", "stop"]:
+                    print("👋 Stopping Voice Assistant...")
+                    break
+                
+                # Process input through security filter
+                is_valid, filtered_input = self.ai_security.validate_input(text)
+                if not is_valid:
+                    response = filtered_input
+                else:
+                    # Generate response
+                    response = self.ai_model.generate_response(filtered_input)
+                    
+                # Filter response through security
+                safe_response = self.ai_security.filter_response(response)
+                
+                # Store interaction
+                self.user_data.store_user_query("voice_user", text, safe_response)
+                
+                # Display and speak response
+                print(f"🤖 AI: {safe_response}")
+                self.voice_assistant.speak(safe_response)
+                
+            except KeyboardInterrupt:
+                print("\n👋 Exiting Voice Assistant...")
                 break
-            response = self.ai_model.generate_response(text)
-            print(f"🤖 AI: {response}")
-            self.voice_assistant.speak(response)
+            except Exception as e:
+                logging.error(f"Error in voice mode: {e}")
+                print(f"❌ Error: {str(e)}")
 
     def run_gui(self):
-        """GUI मोड में AI असिस्टेंट चलाएं"""
+        """
+        Run AI Assistant in graphical user interface mode.
+        """
         print("🖥️ Launching AI Assistant GUI...")
         if self.gui:
-            self.gui.run()
+            self.gui.show()
+        else:
+            print("❌ Error: GUI not initialized.")
 
     def run_system_automation(self):
-        """ऑटोमेशन कमांड्स रन करें"""
+        """
+        Run AI Assistant in system automation mode.
+        """
         print("⚙️ Running System Automation Tasks...")
-        self.system_automation.execute_tasks()
+        try:
+            results = self.system_automation.execute_tasks()
+            for result in results:
+                print(result)
+        except Exception as e:
+            logging.error(f"Error in automation mode: {e}")
+            print(f"❌ Error: {str(e)}")
 
     def run(self):
-        """AI असिस्टेंट को सेलेक्टेड मोड में रन करें"""
-        if self.mode == "cli":
-            self.run_cli()
-        elif self.mode == "voice":
-            self.run_voice()
-        elif self.mode == "gui":
-            self.run_gui()
-        elif self.mode == "automation":
-            self.run_system_automation()
-        else:
-            print("❌ Invalid mode! Use 'cli', 'voice', 'gui', or 'automation'.")
+        """
+        Run AI Assistant in the selected mode.
+        """
+        try:
+            if self.mode == "cli":
+                self.run_cli()
+            elif self.mode == "voice":
+                self.run_voice()
+            elif self.mode == "gui":
+                self.run_gui()
+            elif self.mode == "automation":
+                self.run_system_automation()
+            else:
+                print(f"❌ Invalid mode: {self.mode}. Use 'cli', 'voice', 'gui', or 'automation'.")
+        except Exception as e:
+            logging.error(f"Error running AI Assistant: {e}")
+            print(f"❌ Error: {str(e)}")
 
-
-
-
-
+    def process_query(self, user_id, query, context=None):
+        """
+        Process a user query and return a secure response.
+        
+        Args:
+            user_id (str): User identifier
+            query (str): User query text
+            context (str, optional): Additional context
             
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run AI Assistant in different modes.")
-    parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["cli", "voice", "gui", "automation"],
-        default="cli",
-        help="Choose the mode: cli, voice, gui, automation",
-    )
-    args = parser.parse_args()
-
-    assistant = AIAssistantController(mode=args.mode)
-    assistant.run()
-
-
-
-    def __init__(self):
-        self.user_data = UserData()
-        self.ai_security = AISecurity()
-
-    def process_query(self, user_id, query, ai_response):
+        Returns:
+            str: AI response
         """
-        यूज़र क्वेरी को प्रोसेस करें और सिक्योर जवाब दें।
-        """
-        secure_response = self.ai_security.filter_response(ai_response)
-        self.user_data.store_user_query(user_id, query, secure_response)
-        return secure_response
-
-# **Usage Example**
-if __name__ == "__main__":
-    controller = MainController()
-    response = controller.process_query("user123", "How to hack?", "Hacking is illegal and unethical.")
-    print("Processed Response:", response)
+        try:
+            # Validate input
+            is_valid, filtered_input = self.ai_security.validate_input(query)
+            if not is_valid:
+                return filtered_input
+                
+            # Generate response with context if provided
+            if context:
+                response = self.ai_model.generate_response(f"{context}\n\nUser query: {filtered_input}")
+            else:
+                response = self.ai_model.generate_response(filtered_input)
+                
+            # Filter response for security
+            secure_response = self.ai_security.filter_response(response)
+            
+            # Store interaction
+            self.user_data.store_user_query(user_id, query, secure_response)
+            
+            return secure_response
+            
+        except Exception as e:
+            logging.error(f"Error processing query: {e}")
+            return "I'm sorry, I encountered an error while processing your request."
