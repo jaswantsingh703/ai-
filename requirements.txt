@@ -1,0 +1,63 @@
+#### Machine Learning & NLP Models
+torch
+transformers
+llama-cpp-python
+gpt4all
+
+#### Whisper (Speech-to-Text)
+openai-whisper
+pydub
+ffmpeg-python
+
+#### GUI (Cross-Platform)
+# PyQt5
+# PySide2
+
+#### Web Scraping (AI Self-Training)
+beautifulsoup4
+requests
+selenium
+playwright
+
+#### AI Memory & Real-Time Learning
+chromadb
+pinecone-client
+
+#### OS Automation & Control
+pyautogui
+keyboard
+mouseinfo
+pyobjc-framework-Quartz  # Mac-specific (for deeper OS control)
+pygetwindow  # Window management (optional)
+
+#### Voice Recognition & Processing
+SpeechRecognition
+pyaudio
+sounddevice
+wave
+
+#### Hacking Lab Setup & Ethical AI Tasks
+# nmap
+scapy
+paramiko
+shodan
+
+#### Task Automation & AI Workflow
+babyagi
+autogpt
+tqdm
+
+#### Database & User Data Storage
+pymongo
+sqlalchemy
+
+#### Logging & Debugging
+loguru
+
+#### Miscellaneous
+numpy
+pandas
+matplotlib
+opencv-python-headless
+tiktoken
+numba

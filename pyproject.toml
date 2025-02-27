@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "AI_Assistant"
+version = "1.0.0"
+description = "A multi-platform AI Assistant with self-learning, automation, and ethical hacking features."
+readme = "README.md"
+authors = [{ name = "Your Name", email = "your.email@example.com" }]
+license = { file = "LICENSE" }
+dependencies = [
+    "torch",
+    "transformers",
+    "llama-cpp-python",
+    "gpt4all",
+    "openai-whisper",
+    "pydub",
+    "ffmpeg-python",
+    "PyQt5",
+    "PySide2",
+    "tkinter",
+    "beautifulsoup4",
+    "requests",
+    "chromadb",
+    "pinecone-client",
+    "pyautogui",
+    "keyboard",
+    "mouseinfo",
+    "pyobjc-framework-Quartz",
+    "pygetwindow",
+    "SpeechRecognition",
+    "pyaudio",
+    "sounddevice",
+    "wave",
+    "nmap",
+    "scapy",
+    "paramiko",
+    "shodan",
+    "babyagi",
+    "autogpt",
+    "tqdm",
+    "loguru",
+    "numpy",
+    "pandas",
+    "matplotlib"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "black", "flake8", "isort"]
+
+[project.scripts]
+ai-assistant = "src.main_controller:main"
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311']
+
+[tool.isort]
+profile = "black"
+
+[tool.flake8]
+max-line-length = 88
+exclude = [".git", "__pycache__", "venv", "build", "dist"]
