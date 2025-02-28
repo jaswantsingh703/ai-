@@ -1,72 +1,119 @@
 import os
 import logging
 import numpy as np
+import json
+import time
 
 # Check if chromadb is available
 try:
-    from chromadb import Client
-    from chromadb.config import Settings
+    import chromadb
+    from chromadb.utils import embedding_functions
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
-    logging.warning("chromadb module not available. Memory functionality will be limited.")
+    logging.warning("chromadb not available. Using fallback memory storage.")
 
 class SelfLearningAI:
     """
-    Real-time learning module that stores and retrieves conversation interactions.
+    Implements real-time learning and memory capabilities.
+    Stores conversation history and context using vector embeddings.
     """
     
-    def __init__(self, persist_directory="memory_db", collection_name="ai_memory"):
+    def __init__(self, collection_name="ai_memory", persist_directory="memory_db"):
         """
-        Initialize the self-learning AI with memory storage.
+        Initialize the self-learning module.
         
         Args:
-            persist_directory (str): Directory to store memory database
             collection_name (str): Name of the memory collection
+            persist_directory (str): Directory to persist memory
         """
-        self.persist_directory = persist_directory
         self.collection_name = collection_name
-        self.collection = None
+        self.persist_directory = persist_directory
         
-        # Create persist directory if it doesn't exist
+        # Create directory if it doesn't exist
         os.makedirs(self.persist_directory, exist_ok=True)
         
-        # Initialize ChromaDB if available
+        # Initialize memory database
+        self.client = None
+        self.collection = None
+        self.embedding_function = None
+        
         if CHROMADB_AVAILABLE:
             try:
-                self.client = Client(Settings(
-                    chroma_db_impl="duckdb+parquet",
-                    persist_directory=self.persist_directory
-                ))
-                self.collection = self.client.get_or_create_collection(name=collection_name)
-                logging.info(f"SelfLearningAI initialized with collection: {collection_name}")
+                # Initialize ChromaDB client
+                self.client = chromadb.PersistentClient(path=self.persist_directory)
+                
+                # Initialize embedding function - use sentence transformers if available
+                try:
+                    self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+                        model_name="all-MiniLM-L6-v2"
+                    )
+                except:
+                    # Fallback to default embedding
+                    self.embedding_function = None
+                
+                # Get or create collection
+                self.collection = self.client.get_or_create_collection(
+                    name=self.collection_name,
+                    embedding_function=self.embedding_function
+                )
+                
+                logging.info(f"Initialized ChromaDB memory with collection: {collection_name}")
             except Exception as e:
                 logging.error(f"Error initializing ChromaDB: {e}")
                 self.client = None
-        else:
-            logging.warning("ChromaDB not available. Using fallback memory storage.")
-            self.memory_store = []
+                self.collection = None
+        
+        # Fallback memory if ChromaDB is not available
+        if not CHROMADB_AVAILABLE or not self.collection:
+            self.fallback_memory = []
+            self.fallback_memory_file = os.path.join(self.persist_directory, "memory.json")
+            self._load_fallback_memory()
+            logging.info("Using fallback memory storage")
+    
+    def _load_fallback_memory(self):
+        """Load memory from fallback file storage."""
+        if os.path.exists(self.fallback_memory_file):
+            try:
+                with open(self.fallback_memory_file, 'r') as f:
+                    self.fallback_memory = json.load(f)
+            except Exception as e:
+                logging.error(f"Error loading fallback memory: {e}")
+                self.fallback_memory = []
+    
+    def _save_fallback_memory(self):
+        """Save memory to fallback file storage."""
+        try:
+            with open(self.fallback_memory_file, 'w') as f:
+                json.dump(self.fallback_memory, f)
+        except Exception as e:
+            logging.error(f"Error saving fallback memory: {e}")
     
     def generate_embedding(self, text):
         """
-        Generates a dummy 768-dimensional embedding for the given text.
-        In production, replace with a real embedding model.
+        Generate an embedding vector for the text.
+        Creates a basic embedding if advanced methods unavailable.
         
         Args:
-            text (str): Text to generate embedding for
+            text (str): Text to embed
             
         Returns:
-            list: 768-dimensional embedding vector
+            list: Embedding vector
         """
-        # Use text hash as seed for reproducibility
-        seed = hash(text) % (2**32)
-        np.random.seed(seed)
-        embedding = np.random.rand(768).tolist()  # Dummy 768-dim vector
-        return embedding
+        if not text:
+            # Return zero vector for empty text
+            return [0.0] * 768
+        
+        # If using ChromaDB with embedding function, it will handle this internally
+        if not self.embedding_function:
+            # Create a deterministic embedding based on text hash
+            # This is a very simple fallback that won't have semantic properties
+            np.random.seed(hash(text) % 2**32)
+            return list(np.random.normal(0, 1, 768).astype(float))
     
     def store_interaction(self, query, response):
         """
-        Stores a conversation interaction (query and response) into the memory.
+        Store a conversation interaction in memory.
         
         Args:
             query (str): User query
@@ -77,105 +124,170 @@ class SelfLearningAI:
         """
         if not query or not response:
             return False
-            
-        try:
-            # Create a unique ID for the interaction (hash of query)
-            doc_id = str(hash(query))
-            document = f"Query: {query}\nResponse: {response}"
-            
-            if CHROMADB_AVAILABLE and self.collection:
-                # Store in ChromaDB
-                embedding = self.generate_embedding(query)
+        
+        # Create unique ID using timestamp and query hash
+        interaction_id = f"{time.time()}_{hash(query) % 10000}"
+        document = f"Query: {query}\nResponse: {response}"
+        metadata = {
+            "type": "interaction",
+            "timestamp": time.time(),
+            "query": query
+        }
+        
+        # Store in ChromaDB if available
+        if CHROMADB_AVAILABLE and self.collection:
+            try:
                 self.collection.add(
+                    ids=[interaction_id],
                     documents=[document],
-                    embeddings=[embedding],
-                    ids=[doc_id]
+                    metadatas=[metadata]
                 )
-                logging.info(f"Stored interaction with id: {doc_id}")
+                logging.info(f"Stored interaction in ChromaDB: {interaction_id}")
                 return True
-            else:
-                # Fallback to simple list storage
-                self.memory_store.append({
-                    "id": doc_id,
-                    "query": query,
-                    "response": response
-                })
-                logging.info(f"Stored interaction in fallback memory: {doc_id}")
-                return True
+            except Exception as e:
+                logging.error(f"Error storing in ChromaDB: {e}")
+                # Fall through to fallback
+        
+        # Fallback storage
+        try:
+            self.fallback_memory.append({
+                "id": interaction_id,
+                "document": document,
+                "metadata": metadata,
+                "embedding": self.generate_embedding(query)
+            })
+            self._save_fallback_memory()
+            logging.info(f"Stored interaction in fallback memory: {interaction_id}")
+            return True
         except Exception as e:
-            logging.error(f"Error storing interaction: {e}")
+            logging.error(f"Error storing in fallback memory: {e}")
             return False
     
     def retrieve_context(self, query, top_k=3):
         """
-        Retrieves similar interactions for the given query.
+        Retrieve relevant context for a query.
         
         Args:
-            query (str): Query to find similar interactions for
-            top_k (int): Number of similar interactions to retrieve
+            query (str): Query to find context for
+            top_k (int): Number of relevant items to retrieve
             
         Returns:
             str: Retrieved context as concatenated text
         """
         if not query:
             return ""
-            
-        try:
-            if CHROMADB_AVAILABLE and self.collection:
-                # Retrieve from ChromaDB
-                embedding = self.generate_embedding(query)
+        
+        # Retrieve from ChromaDB if available
+        if CHROMADB_AVAILABLE and self.collection:
+            try:
                 results = self.collection.query(
-                    query_embeddings=[embedding],
-                    n_results=top_k,
-                    include=["documents"]
+                    query_texts=[query],
+                    n_results=top_k
                 )
-                documents = results.get("documents", [[]])[0]
-                context = "\n\n".join(documents)
-                logging.info(f"Retrieved context for query: {query}")
-                return context
-            else:
-                # Simple exact match from fallback memory
-                matching = [item for item in self.memory_store if query.lower() in item["query"].lower()]
-                matching = matching[:top_k]
-                context = "\n\n".join([f"Query: {item['query']}\nResponse: {item['response']}" for item in matching])
-                return context
-        except Exception as e:
-            logging.error(f"Error retrieving context: {e}")
-            return ""
+                
+                if results and 'documents' in results and results['documents']:
+                    documents = results['documents'][0]
+                    if documents:
+                        return "\n\n".join(documents)
+            except Exception as e:
+                logging.error(f"Error retrieving from ChromaDB: {e}")
+                # Fall through to fallback
+        
+        # Fallback retrieval - basic text matching
+        if self.fallback_memory:
+            try:
+                # Extremely simple matching - just look for word overlap
+                query_words = set(query.lower().split())
+                
+                # Calculate a basic relevance score for each memory item
+                scored_items = []
+                for item in self.fallback_memory:
+                    doc_words = set(item["document"].lower().split())
+                    overlap = len(query_words.intersection(doc_words))
+                    scored_items.append((overlap, item))
+                
+                # Sort by score and take top k
+                scored_items.sort(reverse=True, key=lambda x: x[0])
+                top_items = [item for _, item in scored_items[:top_k]]
+                
+                if top_items:
+                    return "\n\n".join([item["document"] for item in top_items])
+            except Exception as e:
+                logging.error(f"Error retrieving from fallback memory: {e}")
+        
+        return ""
     
     def get_combined_context(self, query):
         """
-        Retrieves the stored context for a query.
-        Can be used to augment the AI model's input.
+        Get context enhanced query for better responses.
         
         Args:
-            query (str): Query to find context for
+            query (str): Original query
             
         Returns:
-            str: Combined context
+            str: Query enhanced with context
         """
         context = self.retrieve_context(query)
         if context:
-            return f"Previous relevant interactions:\n{context}\n\nCurrent query: {query}"
+            return f"Based on previous interactions:\n{context}\n\nCurrent query: {query}"
         return query
     
     def clear_memory(self):
         """
-        Clears all stored memory.
+        Clear all stored memory.
         
         Returns:
             bool: Success status
         """
-        try:
-            if CHROMADB_AVAILABLE and self.collection:
-                # Clear ChromaDB collection
+        # Clear ChromaDB if available
+        if CHROMADB_AVAILABLE and self.collection:
+            try:
                 self.collection.delete(where={})
-                logging.info("Cleared memory collection")
-            else:
-                # Clear fallback memory
-                self.memory_store = []
-                logging.info("Cleared fallback memory")
-            return True
-        except Exception as e:
-            logging.error(f"Error clearing memory: {e}")
-            return False
+                logging.info("Cleared ChromaDB memory")
+            except Exception as e:
+                logging.error(f"Error clearing ChromaDB memory: {e}")
+                return False
+        
+        # Clear fallback memory
+        self.fallback_memory = []
+        self._save_fallback_memory()
+        logging.info("Cleared fallback memory")
+        
+        return True
+    
+    def get_memory_stats(self):
+        """
+        Get statistics about stored memory.
+        
+        Returns:
+            dict: Memory statistics
+        """
+        stats = {
+            "backend": "ChromaDB" if CHROMADB_AVAILABLE and self.collection else "Fallback",
+            "items_count": 0,
+            "unique_queries": 0
+        }
+        
+        if CHROMADB_AVAILABLE and self.collection:
+            try:
+                # Count items in ChromaDB
+                collection_count = self.collection.count()
+                stats["items_count"] = collection_count
+                
+                # Try to estimate unique queries
+                if collection_count > 0:
+                    results = self.collection.get(limit=1000)
+                    if 'metadatas' in results and results['metadatas']:
+                        unique_queries = set()
+                        for metadata in results['metadatas']:
+                            if 'query' in metadata:
+                                unique_queries.add(metadata['query'])
+                        stats["unique_queries"] = len(unique_queries)
+            except Exception as e:
+                logging.error(f"Error getting ChromaDB stats: {e}")
+        else:
+            # Stats from fallback memory
+            stats["items_count"] = len(self.fallback_memory)
+            stats["unique_queries"] = len(set([item["metadata"]["query"] for item in self.fallback_memory if "metadata" in item and "query" in item["metadata"]]))
+        
+        return stats

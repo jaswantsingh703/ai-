@@ -1,459 +1,310 @@
-# AI Assistant Project 🚀
+# Jarvis AI Assistant 🤖
 
-## Overview
+A complete AI assistant project that integrates GPT4All, Llama 3, Whisper, BabyAGI, and other cutting-edge AI technologies into a powerful, voice-controlled assistant that works on macOS, Windows, and Linux.
 
-This AI Assistant is a **multi-functional, self-improving** system powered by **Llama3, GPT4All, Whisper, BabyAGI**, and automation tools. It includes **voice recognition, web browsing, AI-generated task execution, image/video processing, and system control**.
+## 🌟 Features
 
-## Features
+- **Multiple AI Models**: Integrates GPT4All, Llama 3, and Whisper for different AI tasks
+- **Voice Control**: Responds to voice commands in both Hindi and English
+- **Dual Interface**: Offers both GUI and CLI modes
+- **System Automation**: Controls applications, changes volume, and more
+- **Web Browsing**: Searches the web and summarizes content
+- **Computer Vision**: Processes images and videos for face detection and OCR
+- **Self-Learning**: Remembers past interactions using ChromaDB
+- **Task Automation**: Uses BabyAGI for autonomous task planning and execution
+- **Self-Improvement**: Generates new code and tools dynamically
 
-✔ **AI Model Integration** - Supports GPT4All, Llama3, Whisper.
-✔ **Voice Processing** - Speech recognition and text-to-speech.
-✔ **Web Browsing & AI Auto-Learning** - Internet search and self-improvement.
-✔ **Task Execution** - Uses BabyAGI for intelligent task automation.
-✔ **System Automation** - Controls Windows, Mac, and Linux commands.
-✔ **Image & Video Processing** - AI-powered recognition and processing.
-✔ **Self-Improvement & Auto-Development** - AI that evolves over time.
-✔ **Database & Memory Storage** - User interaction history with MongoDB.
+## 🛠️ Installation
 
-## Installation
+### Prerequisites
 
-### Prerequisites:
-
-- **Python 3.10+**
-- **pip** installed
-- **Virtual environment (recommended)**
-
-### Setup:
+For macOS M1:
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-repo/ai-assistant.git
-cd ai-assistant
+# Install required system libraries
+brew install cmake
+brew install portaudio
+brew install ffmpeg
+brew install tesseract
+brew install opencv
+```
 
-# Create a virtual environment
-python -m venv env
-source env/bin/activate  # On Windows use `env\Scripts\activate`
+### Setup
 
-# Install dependencies
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/jarvis-ai.git
+cd jarvis-ai
+```
+
+2. Create a virtual environment:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
-## Usage
+4. Download AI models:
 
-### Run the AI Assistant
+- Place Whisper model (`whisper-medium.pt`) in `models/`
+- Place Llama model (`llama-7b.ggmlv3.q4_0.bin`) in `models/`
+- Place GPT4All model (`gpt4all-falcon-q4_0.bin`) in `models/`
+
+5. Configure API keys:
+
+- Copy the `.env.example` file to `.env` and fill in your API keys
+
+## 🚀 Usage
+
+### Start the AI Assistant
+
+Run in GUI mode (default):
 
 ```bash
 python main.py
 ```
 
-### Train AI on Custom Data
+Run in CLI mode:
 
 ```bash
-python src/training/train_model.py --data data/
+python main.py --mode cli
 ```
 
-### Automate System Tasks
+Run in voice mode:
 
 ```bash
-python src/platform_integration/system_control.py --task "Open Chrome"
+python main.py --mode voice
 ```
 
-## File Structure
+Run in automation mode:
 
+```bash
+python main.py --mode automation
 ```
 
-## Contributing
+### Example Commands
 
-Pull requests are welcome! Make sure to open an issue before making major changes.
+- "Jarvis, open Chrome"
+- "Jarvis, what's the latest AI news?"
+- "Jarvis, run a port scan"
+- "Jarvis, detect faces in sample_image.png"
+- "Jarvis, extract text from document.png"
+- "Jarvis, improve yourself by creating a tool for weather forecasting"
+- "Jarvis, add task: research new machine learning papers"
+- "Jarvis, show tasks"
 
-## License
+## 📁 Project Structure
 
-MIT License © 2025 AI Assistant Team
-
-# AI Assistant Project Report
-
-## Overview
-
-The AI Assistant is a sophisticated, multi-functional system designed to provide intelligent assistance across various domains, leveraging multiple AI models and advanced technologies.
-
-## Key Technologies and Models
-
-### AI Models
-
-1. **Llama3**
-
-   - Open-source large language model
-   - Used for natural language processing and generation
-   - Capabilities: Text generation, comprehension, and reasoning
-
-2. **GPT4All**
-
-   - Lightweight, open-source language model
-   - Fallback model when primary models are unavailable
-   - Capabilities: Basic text generation and interaction
-
-3. **Whisper**
-   - OpenAI's speech recognition model
-   - Used for advanced audio transcription
-   - Capabilities: Accurate voice-to-text conversion
-
-## Core Functionalities
-
-### 1. Voice Processing
-
-- **Speech Recognition**
-
-  - Converts spoken language to text
-  - Supports multiple recognition methods:
-    - Google Speech Recognition
-    - Whisper transcription
-    - Fallback sounddevice recording
-
-- **Text-to-Speech**
-  - Converts text to spoken words
-  - Uses pyttsx3 for cross-platform speech synthesis
-
-### 2. Web Browsing
-
-- Web search capabilities
-- Content fetching from websites
-- Uses Google Search API and BeautifulSoup for web scraping
-- Can perform internet searches and extract web content
-
-### 3. System Automation
-
-- Cross-platform system control
-- Supports Windows, macOS, and Linux
-- Features:
-  - Open applications
-  - Execute system commands
-  - Control system settings (volume, brightness)
-  - Automated task execution
-
-### 4. Image and Video Processing
-
-- Image text extraction (OCR)
-- Face detection in images and videos
-- Uses OpenCV and Tesseract for processing
-- Capabilities:
-  - Extract text from images
-  - Detect and count faces in images/videos
-  - Analyze image and video content
-
-### 5. Self-Improvement
-
-- Code generation
-- Task automation
-- Machine learning-based task refinement
-- Uses BabyAGI for intelligent task management
-
-### 6. Security Features
-
-- Input validation
-- Response filtering
-- Command safety checks
-- Prevents potentially harmful interactions
-
-## Machine Learning Capabilities
-
-### Training
-
-- Dataset loading and preprocessing
-- Model fine-tuning
-- Text generation
-- Supports:
-  - Hugging Face datasets
-  - CSV data loading
-  - Custom model training
-
-### Real-Time Learning
-
-- Conversation memory storage
-- Context retrieval
-- Uses ChromaDB for efficient memory management
-
-## User Interaction Modes
-
-1. **CLI (Command Line Interface)**
-
-   - Text-based interaction
-   - Direct command processing
-
-2. **Voice Interface**
-
-   - Speech-based interaction
-   - Voice commands and responses
-
-3. **Graphical User Interface (GUI)**
-   - PyQt5-based interactive interface
-   - Text and voice input
-   - Visual feedback
-
-## Technical Architecture
-
-### Core Components
-
-- AI Core (model integration, processing)
-- Platform Integration
-- Task Management
-- Security
-- Database Management
-- Training Module
-
-### Technologies Used
-
-- Python
-- PyQt5
-- Transformers
-- ChromaDB
-- OpenCV
-- Whisper
-- GPT4All
-- Llama3
-
-## Security Measures
-
-- Input validation
-- Response filtering
-- Restricted system command execution
-- Logging of interactions
-- Protection against potential misuse
-
-## Extensibility
-
-- Modular design
-- Easily integratable new models
-- Configurable through YAML and environment files
-
-## Limitations
-
-- Requires specific model files
-- Performance depends on installed models
-- Some features require additional dependencies
-
-## Future Development Potential
-
-- Enhanced multi-modal AI capabilities
-- More advanced self-learning mechanisms
-- Expanded platform support
-- Improved natural language understanding
-
-## System Requirements
-
-- Python 3.10+
-- Multiple AI model dependencies
-- Platform-specific requirements for full functionality
-
-## Recommended Use Cases
-
-- Personal assistant
-- Automation tool
-- Learning and research assistant
-- Prototype for advanced AI systems
-
-## Conclusion
-
-The AI Assistant represents a comprehensive, flexible AI platform with diverse capabilities, designed to provide intelligent assistance across multiple domains.
-
-
-
-
-
-AI Assistant Project Structure
-CopyAI_ASSISTANT/
-│
-├── main.py                     # Main entry point of the application
-├── config.yaml                 # Global configuration file
-├── .env                        # Environment variables and sensitive settings
-├── requirements.txt            # Project dependencies
-├── README.md                   # Project documentation
-│
-├── data/                       # Data storage directory
-│   ├── books/                  # PDF books for training
-│   ├── pdfs/                   # Additional PDF documents
-│   ├── videos/                 # Video lecture materials
-│   ├── documents/              # Text documents
-│   └── training_datasets/      # Generated training datasets
-│
-├── models/                     # Trained AI model checkpoints
-│   ├── llama3/
-│   ├── gpt4all/
-│   └── custom_trained/
-│
-├── logs/                       # Application and security logs
+```
+AI_Project/
+├── main.py                           # Main entry point
+├── requirements.txt                  # All dependencies
+├── README.md                         # Project documentation
+├── logs/                             # Log files
 │   ├── ai_logs.log
-│   ├── security_logs.log
-│   └── training_logs.log
-│
-├── src/                        # Source code directory
-│   ├── ai_core/                # Core AI functionality
-│   │   ├── __init__.py
-│   │   ├── model_integration.py    # Model management
-│   │   ├── voice_processing.py     # Voice interaction
-│   │   ├── web_browsing.py         # Web search and content extraction
-│   │   ├── image_processing.py     # Image analysis
-│   │   ├── video_processing.py     # Video processing
-│   │   ├── hacking_lab.py          # Ethical hacking tools
-│   │   └── self_improvement.py     # Self-learning mechanisms
-│   │
-│   ├── security/               # Security-related modules
-│   │   ├── __init__.py
-│   │   ├── ai_security.py          # Input and response filtering
-│   │   └── network_security.py     # Network security tools
-│   │
-│   ├── platform_integration/   # OS-specific automation
-│   │   ├── __init__.py
-│   │   ├── system_control.py       # Cross-platform system control
-│   │   ├── windows_automation.py
-│   │   ├── mac_automation.py
-│   │   └── linux_automation.py
-│   │
-│   ├── task_management/        # Task scheduling and automation
-│   │   ├── __init__.py
-│   │   ├── task_scheduler.py
-│   │   └── babyagi_agent.py        # Intelligent task management
-│   │
-│   ├── training/               # Machine learning training
-│   │   ├── __init__.py
-│   │   ├── dataset_loader.py       # Data collection and preprocessing
-│   │   └── train_model.py          # Model training utilities
-│   │
-│   ├── database/               # User data and interaction storage
-│   │   ├── __init__.py
-│   │   └── user_data.py
-│   │
-│   ├── gui/                    # User interfaces
-│   │   ├── __init__.py
-│   │   ├── main_window.py          # Main GUI
-│   │   └── voice_gui.py            # Voice-specific interface
-│   │
-│   └── utils/                  # Utility functions
-│       ├── __init__.py
-│       ├── config.py               # Configuration management
-│       ├── error_handler.py
-│       └── helper_functions.py
-│
-├── test/                       # Unit and integration tests
-│   ├── test_ai_core.py
-│   ├── test_gui.py
-│   ├── test_voice.py
-│   └── test_security.py
-│
-├── scripts/                    # Utility scripts
-│   ├── deploy.sh               # Deployment script
-│   ├── start.sh                # Application startup script
-│   └── update_models.py        # Model update utility
-│
-└── docs/                       # Project documentation
-    ├── architecture.md
-    ├── dev_guide.md
-    └── user_guide.md
-Detailed Component Descriptions
-Core Components
-
-AI Core (src/ai_core/):
-
-Manages AI model integration
-Handles voice processing
-Provides web browsing capabilities
-Image and video processing
-Ethical hacking tools
-Self-improvement mechanisms
-
-
-Security (src/security/):
-
-Input validation
-Response filtering
-Network security tools
-Prevents potential misuse
-
-
-Platform Integration (src/platform_integration/):
-
-Cross-platform system automation
-OS-specific control mechanisms
-Supports Windows, macOS, Linux
-
-
-Task Management (src/task_management/):
-
-Intelligent task scheduling
-Automated workflow management
-BabyAGI-inspired task execution
-
-
-Training (src/training/):
-
-Dataset loading
-Data preprocessing
-Model training utilities
-
-
-
-Key Files
-
-main.py: Application entry point
-config.yaml: Global configuration
-.env: Sensitive configuration
-requirements.txt: Project dependencies
-
-Data Management
-
-data/: Stores training materials
-
-Books
-PDFs
-Videos
-Documents
-Generated training datasets
-
-
-
-Logging and Monitoring
-
-logs/: Comprehensive logging
-
-AI interactions
-Security events
-Training processes
-
-
-
-Setup and Installation
-
-Clone the repository
-Create virtual environment
-Install dependencies:
-bashCopypython -m venv env
-source env/bin/activate  # On Windows: env\Scripts\activate
-pip install -r requirements.txt
-
-Configure .env file with API keys and settings
-Prepare training data in data/ directory
-Run the application:
-bashCopypython main.py
-
-
-Recommended Development Workflow
-
-Add training materials to data/
-Configure config.yaml
-Set up API keys in .env
-Run training script
-Test individual components
-Integrate and validate
-
-Security and Ethical Guidelines
-
-Only use hacking tools on systems you own
-Obtain proper authorization
-Respect privacy and legal boundaries
-Use AI responsibly
-
-Extensibility
-
-Modular design allows easy component addition
-Supports multiple AI models
-Configurable through YAML and environment files
+│   └── error_logs.log
+├── src/                              # Source code directory
+│    ├── ai_core/                     # Core AI modules
+│    │    ├── model_integration.py    # GPT4All, Llama 3, Whisper integration
+│    │    ├── voice_processing.py     # Voice recognition and TTS
+│    │    ├── web_browsing.py         # Web search and scraping
+│    │    ├── image_processing.py     # OCR and face detection
+│    │    ├── video_processing.py     # Video analysis
+│    │    ├── self_improvement.py     # Auto-code-generation
+│    │    └── real_time_learning.py   # Memory with ChromaDB
+│    ├── gui/                         # GUI modules
+│    │    ├── main_window.py          # Main PyQt5 GUI window
+│    │    └── voice_gui.py            # Voice-enabled GUI interface
+│    ├── platform_integration/        # OS-specific automation
+│    │    ├── system_control.py       # Generic system control
+│    │    ├── mac_automation.py       # macOS automation
+│    │    ├── windows_automation.py   # Windows automation
+│    │    └── linux_automation.py     # Linux automation
+│    ├── task_management/             # Task scheduling and execution
+│    │    ├── babyagi_agent.py        # BabyAGI integration
+│    │    └── task_scheduler.py       # Task scheduler
+│    ├── database/                    # User data storage
+│    │    └── user_data.py            # User data management
+│    ├── security/                    # Security modules
+│    │    └── ai_security.py          # Input validation and filtering
+│    ├── training/                    # AI model training
+│    │    ├── train_model.py          # Model training
+│    │    └── dataset_loader.py       # Dataset loading utilities
+│    └── utils/                       # Utility functions
+│         ├── config.py               # Global configuration
+│         ├── error_handler.py        # Error handling
+│         └── helper_functions.py     # Helper utilities
+├── data/                             # Training data
+├── models/                           # Model checkpoint files
+├── test/                             # Unit tests
+│    ├── test_ai_core.py
+│    ├── test_gui.py
+│    └── test_voice.py
+└── scripts/                          # Deployment scripts
+     ├── deploy.sh                    # Deployment script
+     └── start.sh                     # Start script
 ```
+
+## 🔧 Configuration
+
+The project uses a combination of `config.yaml` and `.env` files for configuration:
+
+### config.yaml
+
+```yaml
+# General Settings
+project_name: "Jarvis AI"
+version: "1.0.0"
+debug_mode: true
+
+# Paths
+data_dir: "data"
+logs_dir: "logs"
+models_dir: "models"
+
+# Model Configuration
+default_model_type: "gpt4all"
+default_model_path: "models/gpt4all-j-v1.3-groovy.bin"
+```
+
+### .env
+
+```
+# API Keys
+OPENAI_API_KEY=your_openai_api_key_here
+HUGGINGFACE_API_KEY=your_huggingface_api_key_here
+GOOGLE_SEARCH_API_KEY=your_google_search_api_key_here
+GOOGLE_SEARCH_ENGINE_ID=your_google_search_engine_id_here
+```
+
+## 🧠 AI Models
+
+### GPT4All
+
+- Used for general text generation and conversation
+- Lightweight and can run locally without an internet connection
+- Default model for most tasks
+
+### Llama 3
+
+- More powerful model for complex reasoning tasks
+- Better context understanding and generation
+- Used when higher quality output is needed
+
+### Whisper
+
+- State-of-the-art speech recognition model
+- Provides accurate voice-to-text conversion
+- Supports multiple languages including Hindi and English
+
+## 🤖 BabyAGI Integration
+
+The BabyAGI agent provides autonomous task planning and execution:
+
+1. Create tasks with: "Jarvis, add task: [description]"
+2. View tasks with: "Jarvis, show tasks"
+3. Run tasks with: "Jarvis, run tasks"
+
+The agent can:
+
+- Break down complex goals into manageable tasks
+- Learn from previous executions to improve future plans
+- Store context in memory for improved performance
+
+## 🔍 Hacking Lab Features
+
+For educational purposes only, the project includes basic cybersecurity features:
+
+- Port scanning: "Jarvis, run a port scan on [ip]"
+- Ping sweep: "Jarvis, run a ping sweep on [subnet]"
+
+⚠️ **Warning**: Only use these features on systems you own or have permission to test.
+
+## 🖥️ GUI
+
+The GUI interface provides:
+
+- Text input and display area
+- Voice command button
+- History of interactions
+- File selection dialog for image/video processing
+
+## 🎤 Voice Control
+
+Voice commands follow this pattern:
+
+- Start with "Jarvis" (wake word)
+- Continue with a command ("open", "search", "run", etc.)
+- End with required parameters
+
+Example: "Jarvis, search for the latest AI developments"
+
+## 🧪 Testing
+
+Run the unit tests to ensure everything is working correctly:
+
+```bash
+python -m unittest discover test
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Model loading errors**:
+
+   - Ensure model files are in the correct location
+   - Check file permissions
+
+2. **Voice recognition not working**:
+
+   - Install required audio libraries
+   - Check microphone permissions
+
+3. **GUI not displaying**:
+   - Ensure PyQt5 is installed correctly
+   - Install additional dependencies if needed
+
+## 📚 Documentation
+
+- [User Guide](docs/user_guide.md)
+- [Developer Guide](docs/dev_guide.md)
+- [Architecture](docs/architecture.md)
+
+## 🛡️ Security
+
+This project implements several security measures:
+
+- Input validation to prevent command injection
+- Response filtering to prevent sensitive data leakage
+- Command restrictions to prevent system damage
+- Logging of security events
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📜 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgements
+
+- OpenAI for the Whisper model
+- Meta AI for the Llama model
+- The GPT4All team
+- The PyQt team
+- All contributors and testers

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jarvis AI Assistant</title>
+    <style>
+      :root {
+        --primary-color: #3498db;
+        --secondary-color: #2ecc71;
+        --background-color: #f5f5f5;
+        --text-color: #333;
+        --container-bg: #fff;
+        --border-color: #ddd;
+        --user-message-bg: #e1f5fe;
+        --ai-message-bg: #f1f8e9;
+        --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Dark mode */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary-color: #2980b9;
+          --secondary-color: #27ae60;
+          --background-color: #1e1e1e;
+          --text-color: #f5f5f5;
+          --container-bg: #2d2d2d;
+          --border-color: #444;
+          --user-message-bg: #01579b;
+          --ai-message-bg: #2e7d32;
+          --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+        transition: all 0.3s ease;
+      }
+
+      #container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: var(--container-bg);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        grid-gap: 20px;
+        min-height: 90vh;
+      }
+
+      /* Sidebar */
+      #sidebar {
+        background-color: var(--container-bg);
+        border-right: 1px solid var(--border-color);
+        padding-right: 20px;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+
+      .logo img {
+        width: 50px;
+        height: 50px;
+        margin-right: 10px;
+      }
+
+      .logo h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .nav-item:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .nav-item i {
+        margin-right: 10px;
+        color: var(--primary-color);
+      }
+
+      /* Main content */
+      #main {
+        display: flex;
+        flex-direction: column;
+      }
+
+      #chat-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: var(--container-bg);
+        border-radius: 5px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 20px;
+        height: calc(90vh - 180px);
+      }
+
+      .message {
+        margin-bottom: 15px;
+        padding: 12px 15px;
+        border-radius: 10px;
+        max-width: 80%;
+      }
+
+      .user-message {
+        background-color: var(--user-message-bg);
+        align-self: flex-end;
+        margin-left: auto;
+      }
+
+      .ai-message {
+        background-color: var(--ai-message-bg);
+        align-self: flex-start;
+      }
+
+      .message-header {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      #input-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      #user-input {
+        flex-grow: 1;
+        padding: 12px 15px;
+        border-radius: 50px;
+        border: 1px solid var(--border-color);
+        background-color: var(--container-bg);
+        color: var(--text-color);
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.3s;
+      }
+
+      #user-input:focus {
+        border-color: var(--primary-color);
+      }
+
+      button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: var(--secondary-color);
+      }
+
+      button i {
+        font-size: 20px;
+      }
+
+      #voice-button.listening {
+        background-color: #e74c3c;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      /* Status indicator */
+      #status-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 8px 15px;
+        background-color: var(--secondary-color);
+        color: white;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      #status-indicator.visible {
+        opacity: 1;
+      }
+
+      /* System status badges */
+      .status-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .badge.online {
+        background-color: rgba(46, 204, 113, 0.2);
+        color: #27ae60;
+      }
+
+      .badge.offline {
+        background-color: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+      }
+
+      .badge i {
+        margin-right: 5px;
+        font-size: 10px;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        #container {
+          grid-template-columns: 1fr;
+          margin: 10px;
+          padding: 15px;
+        }
+
+        #sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border-color);
+          padding-right: 0;
+          padding-bottom: 15px;
+          margin-bottom: 15px;
+        }
+
+        .nav-items {
+          display: flex;
+          overflow-x: auto;
+          padding-bottom: 10px;
+        }
+
+        .nav-item {
+          margin-right: 10px;
+          margin-bottom: 0;
+          white-space: nowrap;
+        }
+      }
+    </style>
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <div id="container">
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <div class="logo">
+          <i class="fas fa-robot fa-2x" style="color: var(--primary-color)"></i>
+          <h1>Jarvis AI</h1>
+        </div>
+
+        <div class="nav-items">
+          <div class="nav-item" id="chat-nav">
+            <i class="fas fa-comments"></i>
+            <span>Chat</span>
+          </div>
+          <div class="nav-item" id="tasks-nav">
+            <i class="fas fa-tasks"></i>
+            <span>Tasks</span>
+          </div>
+          <div class="nav-item" id="file-nav">
+            <i class="fas fa-file-upload"></i>
+            <span>Files</span>
+          </div>
+          <div class="nav-item" id="settings-nav">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </div>
+        </div>
+
+        <div class="status-badges">
+          <div class="badge online">
+            <i class="fas fa-circle"></i>
+            <span>AI Model: Online</span>
+          </div>
+          <div class="badge online">
+            <i class="fas fa-circle"></i>
+            <span>Voice: Ready</span>
+          </div>
+          <div class="badge online">
+            <i class="fas fa-circle"></i>
+            <span>Tasks: Running</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div id="main">
+        <div id="chat-container">
+          <!-- AI welcome message -->
+          <div class="message ai-message">
+            <div class="message-header">Jarvis AI</div>
+            <div class="message-content">
+              Hello! I'm Jarvis, your AI assistant. How can I help you today?
+            </div>
+          </div>
+          <!-- Messages will be added here -->
+        </div>
+
+        <div id="input-container">
+          <input
+            type="text"
+            id="user-input"
+            placeholder="Type your message here..."
+            autocomplete="off" />
+          <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+          <button id="voice-button"><i class="fas fa-microphone"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status-indicator">
+      <i class="fas fa-check-circle" style="margin-right: 8px"></i>
+      <span id="status-text">Message sent</span>
+    </div>
+
+    <script>
+      // DOM elements
+      const chatContainer = document.getElementById("chat-container");
+      const userInput = document.getElementById("user-input");
+      const sendButton = document.getElementById("send-button");
+      const voiceButton = document.getElementById("voice-button");
+      const statusIndicator = document.getElementById("status-indicator");
+
+      // Sample tasks for demo
+      const tasks = [
+        { id: 1, name: "Research latest AI developments", status: "completed" },
+        { id: 2, name: "Generate weekly report", status: "pending" },
+        { id: 3, name: "Analyze user behavior data", status: "in_progress" },
+      ];
+
+      // Add event listeners
+      document.addEventListener("DOMContentLoaded", () => {
+        sendButton.addEventListener("click", handleUserMessage);
+        userInput.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            handleUserMessage();
+          }
+        });
+        voiceButton.addEventListener("click", toggleVoiceInput);
+
+        // Nav item clicks
+        document
+          .getElementById("chat-nav")
+          .addEventListener("click", showChatView);
+        document
+          .getElementById("tasks-nav")
+          .addEventListener("click", showTasksView);
+        document
+          .getElementById("settings-nav")
+          .addEventListener("click", showSettingsView);
+        document
+          .getElementById("file-nav")
+          .addEventListener("click", showFileUploadView);
+      });
+
+      // Handle user messages
+      function handleUserMessage() {
+        const message = userInput.value.trim();
+        if (message.length === 0) return;
+
+        // Add user message to chat
+        addMessageToChat(message, "user");
+
+        // Clear input
+        userInput.value = "";
+
+        // Show status
+        showStatus("Processing...", "spinner");
+
+        // Simulate AI thinking
+        setTimeout(() => {
+          // Get AI response (in a real app, this would be an API call)
+          const aiResponse = getAIResponse(message);
+
+          // Add AI response to chat
+          addMessageToChat(aiResponse, "ai");
+
+          // Update status
+          showStatus("Response received", "check-circle");
+
+          // Scroll to bottom
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 1000 + Math.random() * 2000); // Random delay to simulate thinking
+
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      // Add a message to the chat
+      function addMessageToChat(text, sender) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${sender}-message`;
+
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "message-header";
+        headerDiv.textContent = sender === "user" ? "You" : "Jarvis AI";
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "message-content";
+        contentDiv.textContent = text;
+
+        messageDiv.appendChild(headerDiv);
+        messageDiv.appendChild(contentDiv);
+        chatContainer.appendChild(messageDiv);
+      }
+
+      // Toggle voice input
+      function toggleVoiceInput() {
+        if (voiceButton.classList.contains("listening")) {
+          // Stop listening
+          voiceButton.classList.remove("listening");
+          voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+          showStatus("Voice input stopped", "microphone-slash");
+        } else {
+          // Start listening
+          voiceButton.classList.add("listening");
+          voiceButton.innerHTML = '<i class="fas fa-stop"></i>';
+          showStatus("Listening...", "microphone");
+
+          // Simulate voice recognition (in a real app, this would use the Web Speech API)
+          setTimeout(() => {
+            const fakeVoiceInput = getRandomVoiceCommand();
+            userInput.value = fakeVoiceInput;
+
+            // Stop listening
+            voiceButton.classList.remove("listening");
+            voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+
+            // Process the command
+            handleUserMessage();
+          }, 2000 + Math.random() * 3000); // Random delay to simulate listening
+        }
+      }
+
+      // Show status indicator
+      function showStatus(text, icon) {
+        statusIndicator.querySelector("span").textContent = text;
+        statusIndicator.querySelector("i").className = `fas fa-${icon}`;
+
+        statusIndicator.classList.add("visible");
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+          statusIndicator.classList.remove("visible");
+        }, 3000);
+      }
+
+      // View functions
+      function showChatView() {
+        // Show chat view (already visible by default)
+        document.getElementById("chat-container").innerHTML = "";
+
+        // Add welcome message
+        addMessageToChat(
+          "Hello! I'm Jarvis, your AI assistant. How can I help you today?",
+          "ai"
+        );
+      }
+
+      function showTasksView() {
+        // Convert chat container to tasks view
+        document.getElementById("chat-container").innerHTML = `
+                <h2>Task Management</h2>
+                <p>Here are your current tasks:</p>
+                <div class="tasks-list">
+                    ${tasks
+                      .map(
+                        (task) => `
+                        <div class="task-item">
+                            <div class="task-status ${task.status}">
+                                <i class="fas fa-${
+                                  task.status === "completed"
+                                    ? "check-circle"
+                                    : task.status === "in_progress"
+                                    ? "spinner fa-spin"
+                                    : "clock"
+                                }"></i>
+                            </div>
+                            <div class="task-name">${task.name}</div>
+                        </div>
+                    `
+                      )
+                      .join("")}
+                </div>
+                <button class="add-task-btn">
+                    <i class="fas fa-plus"></i> Add New Task
+                </button>
+            `;
+
+        showStatus("Tasks loaded", "tasks");
+      }
+
+      function showSettingsView() {
+        // Convert chat container to settings view
+        document.getElementById("chat-container").innerHTML = `
+                <h2>Settings</h2>
+                <div class="settings-section">
+                    <h3>AI Model</h3>
+                    <div class="setting-item">
+                        <label>Default AI Model</label>
+                        <select>
+                            <option value="gpt4all">GPT4All</option>
+                            <option value="llama3">Llama 3</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Model Path</label>
+                        <input type="text" value="models/gpt4all-j-v1.3-groovy.bin">
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Voice Settings</h3>
+                    <div class="setting-item">
+                        <label>Voice Recognition</label>
+                        <select>
+                            <option value="whisper">Whisper</option>
+                            <option value="google">Google Speech</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Voice Language</label>
+                        <select>
+                            <option value="en-US">English (US)</option>
+                            <option value="hi-IN">Hindi</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="save-settings-btn">Save Settings</button>
+            `;
+
+        showStatus("Settings loaded", "cog");
+      }
+
+      function showFileUploadView() {
+        // Convert chat container to file upload view
+        document.getElementById("chat-container").innerHTML = `
+                <h2>File Processing</h2>
+                <p>Upload files for analysis:</p>
+                <div class="file-upload-area">
+                    <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                    <p>Drag & drop files here, or click to select</p>
+                    <input type="file" id="file-input" multiple style="display: none;">
+                </div>
+                <div class="file-types-info">
+                    <p>Supported files:</p>
+                    <ul>
+                        <li><i class="fas fa-image"></i> Images (for OCR & face detection)</li>
+                        <li><i class="fas fa-video"></i> Videos (for video analysis)</li>
+                        <li><i class="fas fa-file-alt"></i> Text/PDF (for text analysis)</li>
+                    </ul>
+                </div>
+            `;
+
+        // Add click handler to file upload area
+        document
+          .querySelector(".file-upload-area")
+          .addEventListener("click", () => {
+            document.getElementById("file-input").click();
+          });
+
+        showStatus("File upload ready", "file-upload");
+      }
+
+      // Get simulated AI response (in a real app, this would call your Python backend)
+      function getAIResponse(message) {
+        // Check for command patterns
+        const messageLower = message.toLowerCase();
+
+        if (messageLower.includes("hello") || messageLower.includes("hi")) {
+          return "Hello there! How can I assist you today?";
+        }
+
+        if (messageLower.includes("open")) {
+          const app = message.replace(/open\s+/i, "").trim();
+          return `Opening ${app} for you now.`;
+        }
+
+        if (messageLower.includes("search")) {
+          const query = message.replace(/search\s+/i, "").trim();
+          return `I found these results for "${query}":\n\n1. First search result\n2. Second search result\n3. Third search result`;
+        }
+
+        if (messageLower.includes("task")) {
+          if (messageLower.includes("add")) {
+            const task = message.replace(/add\s+task[:\s]+/i, "").trim();
+            return `Task added: "${task}". It's been added to your task list.`;
+          }
+          if (messageLower.includes("show") || messageLower.includes("list")) {
+            return "Here are your current tasks:\n\n1. Research latest AI developments\n2. Generate weekly report\n3. Analyze user behavior data";
+          }
+        }
+
+        if (messageLower.includes("help")) {
+          return "I can help you with various tasks. Try these commands:\n\n- 'Open [application]'\n- 'Search for [query]'\n- 'Add task: [description]'\n- 'Show tasks'\n- 'Run port scan'\n- 'Detect faces in [image]'";
+        }
+
+        // Default responses
+        const defaultResponses = [
+          "I understand your request about " +
+            message +
+            ". Let me help you with that.",
+          "I'll assist you with " +
+            message +
+            ". What specific information do you need?",
+          "I'm processing your request about " +
+            message +
+            ". Can you provide more details?",
+          "Let me analyze " + message + " for you. This might take a moment.",
+        ];
+
+        return defaultResponses[
+          Math.floor(Math.random() * defaultResponses.length)
+        ];
+      }
+
+      // Get random voice command for simulation
+      function getRandomVoiceCommand() {
+        const commands = [
+          "Open Google Chrome",
+          "Search for latest AI research papers",
+          "What's the weather like today?",
+          "Add task: Review quarterly reports",
+          "Show me the latest tasks",
+          "Help me with system automation",
+          "Run a basic port scan",
+          "Tell me a joke",
+        ];
+
+        return commands[Math.floor(Math.random() * commands.length)];
+      }
+    </script>
+  </body>
+</html>

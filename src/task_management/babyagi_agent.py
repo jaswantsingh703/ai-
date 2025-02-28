@@ -1,292 +1,315 @@
-import time
-import threading
 import logging
-import datetime
-import sched
+import time
+import uuid
+import os
+import threading
+from src.ai_core.model_integration import AIModel
+from src.ai_core.real_time_learning import SelfLearningAI
 from src.utils.config import Config
 
-class TaskScheduler:
+class BabyAgiAgent:
     """
-    Task scheduler for executing recurring and scheduled tasks.
+    An autonomous AI agent inspired by BabyAGI.
+    Manages task generation, execution, and refinement with memory.
     """
     
-    def __init__(self):
+    def __init__(self, model_type=None, model_path=None):
         """
-        Initialize the task scheduler.
-        """
-        self.tasks = []
-        self.running = False
-        self.scheduler = sched.scheduler(time.time, time.sleep)
-        self.lock = threading.Lock()
-        logging.info("TaskScheduler initialized")
-
-    def add_task(self, task_function, interval=None, schedule=None, task_name=None):
-        """
-        Add a task to the scheduler.
+        Initialize the BabyAGI agent.
         
         Args:
-            task_function (callable): Function to execute
-            interval (float, optional): Time interval in seconds between executions
-            schedule (str, optional): Cron-like schedule string (e.g., "09:30")
-            task_name (str, optional): Name for the task
+            model_type (str): AI model type to use (llama3, gpt4all, etc.)
+            model_path (str): Path to the model file
+        """
+        # Use config values if parameters not provided
+        model_type = model_type or Config.get("default_model_type")
+        model_path = model_path or Config.get("default_model_path")
+        
+        # Initialize components
+        self.ai_model = AIModel(model_type, model_path)
+        self.memory = SelfLearningAI()
+        self.task_queue = []
+        self.history = []
+        self.is_running = False
+        self.lock = threading.Lock()
+        
+        logging.info("BabyAGI agent initialized")
+    
+    def add_task(self, objective, task_type="general", priority=1):
+        """
+        Add a task to the queue.
+        
+        Args:
+            objective (str): Task objective/description
+            task_type (str): Type of task
+            priority (int): Priority level (higher = more important)
             
         Returns:
             str: Task ID
         """
-        if not task_function:
-            logging.error("Cannot add task: No function provided")
-            return None
-            
-        if interval is None and schedule is None:
-            logging.error("Cannot add task: No interval or schedule provided")
-            return None
+        task_id = str(uuid.uuid4())
         
-        # Generate task name if not provided
-        if task_name is None:
-            task_name = f"Task_{len(self.tasks) + 1}"
-        
-        # Create task object
-        task = {
-            "id": f"task_{int(time.time())}_{len(self.tasks)}",
-            "name": task_name,
-            "function": task_function,
-            "interval": interval,
-            "schedule": schedule,
-            "last_run": None,
-            "next_run": None,
-            "runs": 0,
-            "enabled": True
-        }
-        
-        # Calculate next run time
-        if interval:
-            task["next_run"] = time.time() + interval
-        elif schedule:
-            task["next_run"] = self._calculate_next_run(schedule)
-        
-        # Add task to list
         with self.lock:
-            self.tasks.append(task)
-            # Schedule task
-            if self.running:
-                self._schedule_task(task)
+            task = {
+                "id": task_id,
+                "objective": objective,
+                "type": task_type,
+                "priority": priority,
+                "status": "pending",
+                "created_at": time.time(),
+                "completed_at": None,
+                "result": None
+            }
+            
+            self.task_queue.append(task)
+            logging.info(f"Task added: {objective} (ID: {task_id})")
         
-        logging.info(f"Added task: {task_name}, ID: {task['id']}")
-        return task["id"]
-
-    def _calculate_next_run(self, schedule):
+        return task_id
+    
+    def get_task(self, task_id):
         """
-        Calculate the next run time based on a schedule string.
+        Get a task by ID.
         
         Args:
-            schedule (str): Schedule string (HH:MM)
+            task_id (str): Task ID
             
         Returns:
-            float: Unix timestamp for next run
+            dict: Task data or None if not found
         """
+        with self.lock:
+            for task in self.task_queue:
+                if task["id"] == task_id:
+                    return task.copy()
+        return None
+    
+    def get_tasks(self, status=None):
+        """
+        Get all tasks, optionally filtered by status.
+        
+        Args:
+            status (str, optional): Filter by status
+            
+        Returns:
+            list: List of tasks
+        """
+        with self.lock:
+            if status:
+                return [task.copy() for task in self.task_queue if task["status"] == status]
+            else:
+                return [task.copy() for task in self.task_queue]
+    
+    def execute_task(self, task_id=None):
+        """
+        Execute a specific task or the highest priority pending task.
+        
+        Args:
+            task_id (str, optional): Task ID to execute
+            
+        Returns:
+            dict: Execution result with task info
+        """
+        with self.lock:
+            # Find the task to execute
+            task = None
+            if task_id:
+                # Find by ID
+                for t in self.task_queue:
+                    if t["id"] == task_id and t["status"] == "pending":
+                        task = t
+                        break
+                
+                if not task:
+                    logging.warning(f"Task {task_id} not found or not pending")
+                    return {"success": False, "error": "Task not found or not pending"}
+            else:
+                # Find highest priority pending task
+                pending_tasks = [t for t in self.task_queue if t["status"] == "pending"]
+                if not pending_tasks:
+                    logging.info("No pending tasks to execute")
+                    return {"success": False, "error": "No pending tasks"}
+                
+                # Sort by priority (highest first)
+                pending_tasks.sort(key=lambda x: x["priority"], reverse=True)
+                task = pending_tasks[0]
+            
+            # Mark as in progress
+            task["status"] = "in_progress"
+        
+        # Execute task outside the lock
+        logging.info(f"Executing task: {task['objective']} (ID: {task['id']})")
+        
         try:
-            # Parse schedule
-            hour, minute = map(int, schedule.split(":"))
+            # Get context from memory
+            context = self.memory.retrieve_context(task["objective"])
             
-            # Get current time
-            now = datetime.datetime.now()
-            scheduled_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            # Prepare prompt
+            prompt = f"Task: {task['objective']}\n\n"
+            if context:
+                prompt += f"Context:\n{context}\n\n"
+            prompt += "Execute this task and provide a detailed response."
             
-            # If scheduled time is in the past, use tomorrow
-            if scheduled_time <= now:
-                scheduled_time += datetime.timedelta(days=1)
+            # Generate response
+            response = self.ai_model.generate_response(prompt)
             
-            # Convert to timestamp
-            return scheduled_time.timestamp()
+            # Store in memory
+            self.memory.store_interaction(prompt, response)
+            
+            # Update task with result
+            with self.lock:
+                task["status"] = "completed"
+                task["completed_at"] = time.time()
+                task["result"] = response
+                
+                # Add to history
+                self.history.append({
+                    "task_id": task["id"],
+                    "objective": task["objective"],
+                    "result": response,
+                    "completed_at": task["completed_at"]
+                })
+            
+            logging.info(f"Task completed: {task['objective']} (ID: {task['id']})")
+            return {
+                "success": True,
+                "task_id": task["id"],
+                "result": response
+            }
         except Exception as e:
-            logging.error(f"Error parsing schedule '{schedule}': {e}")
-            # Default to running in 1 hour
-            return time.time() + 3600
-
-    def start(self):
+            logging.error(f"Error executing task {task['id']}: {str(e)}")
+            
+            # Update task status
+            with self.lock:
+                task["status"] = "failed"
+                task["result"] = f"Error: {str(e)}"
+            
+            return {
+                "success": False,
+                "task_id": task["id"],
+                "error": str(e)
+            }
+    
+    def refine_tasks(self):
         """
-        Start the task scheduler.
+        Analyze task history and generate new optimized tasks.
         
         Returns:
-            bool: Success status
+            list: Newly created task IDs
         """
-        if self.running:
-            logging.warning("TaskScheduler is already running")
+        if not self.history:
+            logging.info("No task history to refine")
+            return []
+        
+        logging.info("Refining tasks based on execution history")
+        
+        # Prepare prompt with task history
+        history_text = "\n\n".join([
+            f"Task: {h['objective']}\nResult: {h['result']}"
+            for h in self.history[-5:]  # Last 5 tasks
+        ])
+        
+        prompt = f"""Based on these previously completed tasks:
+
+{history_text}
+
+Generate three new tasks that would be valuable to execute next. Consider dependencies, logical next steps, and potential optimizations.
+Format each task as a separate paragraph with a clear objective.
+"""
+        
+        # Generate tasks
+        response = self.ai_model.generate_response(prompt)
+        
+        # Parse response into tasks
+        new_task_ids = []
+        
+        # Simple parsing - split by paragraphs
+        paragraphs = response.split("\n\n")
+        for i, paragraph in enumerate(paragraphs):
+            if paragraph.strip():
+                # Add as a new task with medium priority
+                task_id = self.add_task(paragraph.strip(), priority=2)
+                new_task_ids.append(task_id)
+        
+        logging.info(f"Created {len(new_task_ids)} refined tasks")
+        return new_task_ids
+    
+    def run(self, iterations=5, interval=2):
+        """
+        Run the agent for a specified number of iterations.
+        
+        Args:
+            iterations (int): Number of iterations to run
+            interval (float): Seconds between iterations
+            
+        Returns:
+            list: Results from all iterations
+        """
+        if self.is_running:
+            logging.warning("BabyAGI is already running")
+            return []
+        
+        self.is_running = True
+        logging.info(f"Starting BabyAGI agent for {iterations} iterations")
+        
+        results = []
+        
+        try:
+            for i in range(iterations):
+                logging.info(f"Iteration {i+1}/{iterations}")
+                
+                # Execute highest priority task
+                result = self.execute_task()
+                results.append(result)
+                
+                # After every other iteration, refine tasks
+                if i > 0 and i % 2 == 0:
+                    self.refine_tasks()
+                
+                # Wait between iterations
+                if i < iterations - 1:
+                    time.sleep(interval)
+        finally:
+            self.is_running = False
+            logging.info("BabyAGI agent run completed")
+        
+        return results
+    
+    def run_async(self, iterations=5, interval=2, callback=None):
+        """
+        Run the agent asynchronously in a separate thread.
+        
+        Args:
+            iterations (int): Number of iterations to run
+            interval (float): Seconds between iterations
+            callback (callable): Function to call with results when done
+            
+        Returns:
+            bool: Whether the async run was started successfully
+        """
+        if self.is_running:
+            logging.warning("BabyAGI is already running")
             return False
         
-        self.running = True
+        def _run_thread():
+            results = self.run(iterations, interval)
+            if callback:
+                callback(results)
         
-        # Schedule all tasks
-        with self.lock:
-            for task in self.tasks:
-                if task["enabled"]:
-                    self._schedule_task(task)
+        thread = threading.Thread(target=_run_thread)
+        thread.daemon = True
+        thread.start()
         
-        # Start scheduler in a separate thread
-        threading.Thread(target=self._run_scheduler, daemon=True).start()
-        
-        logging.info("TaskScheduler started")
         return True
-
+    
     def stop(self):
         """
-        Stop the task scheduler.
+        Stop the running agent.
         
         Returns:
-            bool: Success status
+            bool: Whether the agent was stopped
         """
-        if not self.running:
-            logging.warning("TaskScheduler is not running")
+        if not self.is_running:
             return False
         
-        self.running = False
-        
-        # Cancel all scheduled events
-        with self.lock:
-            for event in self.scheduler.queue:
-                try:
-                    self.scheduler.cancel(event)
-                except:
-                    pass
-        
-        logging.info("TaskScheduler stopped")
+        self.is_running = False
+        logging.info("BabyAGI agent stopped")
         return True
-
-    def _run_scheduler(self):
-        """
-        Run the scheduler in a loop.
-        """
-        while self.running:
-            try:
-                # Run any due events
-                self.scheduler.run(blocking=False)
-                time.sleep(1)
-            except Exception as e:
-                logging.error(f"Error in scheduler: {e}")
-                time.sleep(1)
-
-    def _schedule_task(self, task):
-        """
-        Schedule a task for execution.
-        
-        Args:
-            task (dict): Task to schedule
-        """
-        if not task["enabled"]:
-            return
-            
-        delay = max(0, task["next_run"] - time.time())
-        
-        # Schedule the task execution
-        self.scheduler.enter(
-            delay,
-            1,
-            self._execute_task,
-            (task,)
-        )
-
-    def _execute_task(self, task):
-        """
-        Execute a scheduled task and reschedule.
-        
-        Args:
-            task (dict): Task to execute
-        """
-        if not self.running or not task["enabled"]:
-            return
-            
-        # Update task stats
-        task["last_run"] = time.time()
-        task["runs"] += 1
-        
-        # Execute task
-        try:
-            logging.info(f"Executing task: {task['name']}")
-            task["function"]()
-        except Exception as e:
-            logging.error(f"Error executing task {task['name']}: {e}")
-        
-        # Reschedule if running
-        if self.running and task["enabled"]:
-            # Calculate next run time
-            if task["interval"]:
-                task["next_run"] = time.time() + task["interval"]
-            elif task["schedule"]:
-                task["next_run"] = self._calculate_next_run(task["schedule"])
-            
-            # Schedule next execution
-            self._schedule_task(task)
-
-    def get_tasks(self):
-        """
-        Get all tasks and their status.
-        
-        Returns:
-            list: List of task information dictionaries
-        """
-        task_info = []
-        
-        with self.lock:
-            for task in self.tasks:
-                info = {
-                    "id": task["id"],
-                    "name": task["name"],
-                    "enabled": task["enabled"],
-                    "interval": task["interval"],
-                    "schedule": task["schedule"],
-                    "last_run": task["last_run"],
-                    "next_run": task["next_run"],
-                    "runs": task["runs"]
-                }
-                task_info.append(info)
-                
-        return task_info
-
-    def enable_task(self, task_id):
-        """
-        Enable a task by ID.
-        
-        Args:
-            task_id (str): ID of the task to enable
-            
-        Returns:
-            bool: Success status
-        """
-        with self.lock:
-            for task in self.tasks:
-                if task["id"] == task_id:
-                    task["enabled"] = True
-                    
-                    # Schedule if running
-                    if self.running:
-                        if task["interval"]:
-                            task["next_run"] = time.time() + task["interval"]
-                        elif task["schedule"]:
-                            task["next_run"] = self._calculate_next_run(task["schedule"])
-                        self._schedule_task(task)
-                    
-                    logging.info(f"Task {task_id} enabled")
-                    return True
-                    
-        logging.warning(f"Task {task_id} not found")
-        return False
-
-    def disable_task(self, task_id):
-        """
-        Disable a task by ID.
-        
-        Args:
-            task_id (str): ID of the task to disable
-            
-        Returns:
-            bool: Success status
-        """
-        with self.lock:
-            for task in self.tasks:
-                if task["id"] == task_id:
-                    task["enabled"] = False
-                    logging.info(f"Task {task_id} disabled")
-                    return True
-                    
-        logging.warning(f"Task {task_id} not found")
-        return False
