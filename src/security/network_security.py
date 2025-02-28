@@ -4,6 +4,7 @@ import re
 import subprocess
 import ipaddress
 import threading
+import os
 from src.utils.config import Config
 
 class NetworkSecurity:
@@ -62,14 +63,14 @@ class NetworkSecurity:
         """
         try:
             # Check formats: single port "80" or range "1-1000"
-            if re.match(r'^\d+, port_range):
+            if re.match(r'^\d+$', port_range):
                 # Single port
                 port = int(port_range)
                 if 1 <= port <= 65535:
                     return True, [port]
                 else:
                     return False, "Port must be between 1-65535"
-            elif re.match(r'^\d+-\d+, port_range):
+            elif re.match(r'^\d+-\d+$', port_range):
                 # Port range
                 start, end = map(int, port_range.split('-'))
                 if 1 <= start <= end <= 65535:
@@ -96,14 +97,14 @@ class NetworkSecurity:
         """
         try:
             # Single IP address
-            if re.match(r'^\d+\.\d+\.\d+\.\d+, ip_range):
+            if re.match(r'^\d+\.\d+\.\d+\.\d+$', ip_range):
                 if self.is_ip_allowed(ip_range):
                     return True, [ip_range]
                 else:
                     return False, "IP address not in allowed scan ranges"
             
             # CIDR notation (e.g. 192.168.1.0/24)
-            elif re.match(r'^\d+\.\d+\.\d+\.\d+/\d+, ip_range):
+            elif re.match(r'^\d+\.\d+\.\d+\.\d+/\d+$', ip_range):
                 network = ipaddress.ip_network(ip_range, strict=False)
                 
                 # Check size of network

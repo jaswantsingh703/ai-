@@ -58,16 +58,42 @@ class VoiceAssistant:
         # Try to initialize Whisper for better transcription
         self.whisper_model = None
         if WHISPER_AVAILABLE:
-            try:
-                self.whisper_model = whisper.load_model("base")
-                logging.info("Whisper model initialized")
-            except Exception as e:
-                logging.error(f"Failed to initialize Whisper model: {e}")
+            self.ensure_whisper_model()
         
         # Recording parameters
         self.sample_rate = 16000
         self.is_listening = False
         self.model_path = model_path or Config.get("default_model_path")
+    
+    def ensure_whisper_model(self):
+        """
+        Ensure Whisper model is available for speech recognition.
+        
+        Returns:
+            bool: True if model is available, False otherwise
+        """
+        if self.whisper_model:
+            return True
+            
+        if WHISPER_AVAILABLE:
+            try:
+                # Check if model file exists
+                model_path = os.path.join(Config.get("models_dir"), "whisper-base.pt")
+                if os.path.exists(model_path):
+                    self.whisper_model = whisper.load_model("base", download_root=Config.get("models_dir"))
+                    logging.info("Whisper model loaded from local file")
+                    return True
+                
+                # Download model if needed
+                logging.info("Downloading Whisper model...")
+                self.whisper_model = whisper.load_model("base")
+                logging.info("Whisper model downloaded and loaded")
+                return True
+            except Exception as e:
+                logging.error(f"Failed to initialize or download Whisper model: {e}")
+                return False
+        
+        return False
     
     def listen(self, timeout=5, phrase_time_limit=None):
         """
@@ -87,6 +113,10 @@ class VoiceAssistant:
         self.is_listening = True
         
         try:
+            # Make sure whisper model is available
+            if WHISPER_AVAILABLE and not self.whisper_model:
+                self.ensure_whisper_model()
+                
             # Try using speech_recognition if available
             if SPEECH_RECOGNITION_AVAILABLE and self.recognizer:
                 return self._listen_with_sr(timeout, phrase_time_limit)
@@ -264,4 +294,4 @@ class VoiceAssistant:
             print(f"🎙️ You said: {command}")
             return command
             
-        return
+        return ""
